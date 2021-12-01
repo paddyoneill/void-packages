@@ -1,0 +1,74 @@
+# Template file for 'edk2-ovmf'
+pkgname=edk2-ovmf
+version=202108
+revision=2
+archs="x86_64"
+create_wrksrc=yes
+hostmakedepends="acpica-utils libuuid-devel nasm python3"
+short_desc="EDK II Project Open Virtual Machine Firmware"
+maintainer="Patrick O'Neill <paddy.oneill93@gmail.com>"
+license="BSD-2-Clause-Patent, MIT, Apache-2.0"
+homepage="https://github.com/tianocore/edk2"
+brotli_commit="666c3280cc11dc433c303d79a83d4ffbdd12cc8d"
+openssl_commit="52c587d60be67c337364b830dd3fdc15404a2f04"
+distfiles="https://github.com/tianocore/edk2/archive/edk2-stable${version}.tar.gz
+	   https://github.com/google/brotli/archive/${brotli_commit}.tar.gz
+	   https://github.com/openssl/openssl/archive/${openssl_commit}.tar.gz"
+checksum="fbcf27e64fc2f7cb36eb7c551cc7c7d590446383ae87f66b1c0a81f6516d2999
+          cd82ce69defa40e9e36443e59d90aa5f8c6013024fae6a2de8c31afc2c707065
+          5a8c96397ac085371725136970467bcbe870ac25d61c8709036375371a0e46c6"
+
+post_extract() {
+    cd "${wrksrc}/edk2-edk2-stable${version}"
+    cp -a ../brotli-${brotli_commit}/* BaseTools/Source/C/BrotliCompress/brotli
+    cp -a ../brotli-${brotli_commit}/* MdeModulePkg/Library/BrotliCustomDecompressLib/brotli
+    cp -a ../openssl-${openssl_commit}/* CryptoPkg/Library/OpensslLib/openssl
+}
+
+do_build() {
+    cd "${wrksrc}/edk2-edk2-stable${version}"
+
+    export EDK_TOOLS_PATH="${PWD}/BaseTools"
+    export PATH="${EDK_TOOLS_PATH}/BinWrappers/PosixLike/:${PATH}"
+    export PYTHON_COMMAND="python3"
+    export WORKSPACE="${PWD}"
+
+    bash -c "source edksetup.sh"
+    make -C BaseTools
+
+    ./OvmfPkg/build.sh -a X64 -b RELEASE -t GCC5
+    mv Build/OvmfX64 Build/OvmfX64_NonSB
+    ./OvmfPkg/build.sh -a X64 -b RELEASE -t GCC5 -D SMM_REQUIRE -D SECURE_BOOT_ENABLE -D EXCLUDE_SHELL_FROM_FD
+}
+
+do_install() {
+    vmkdir /usr/share/OVMF
+    vmkdir /usr/share/edk2/ovmf
+
+    cd "${wrksrc}/edk2-edk2-stable${version}"
+
+    for f in OVMF{_CODE,_VARS}; do
+	vinstall Build/OvmfX64_NonSB/RELEASE_GCC5/FV/${f}.fd 644 /usr/share/edk2/ovmf
+	vinstall Build/OvmfX64/RELEASE_GCC5/FV/${f}.fd 644 /usr/share/edk2/ovmf ${f}.secboot.fd
+	vinstall Build/OvmfX64_NonSB/RELEASE_GCC5/FV/${f}.fd 644 /usr/share/OVMF
+	vinstall Build/OvmfX64/RELEASE_GCC5/FV/${f}.fd 644 /usr/share/OVMF ${f}.secboot.fd
+    done
+
+    vinstall Build/OvmfX64/RELEASE_GCC5/X64/EnrollDefaultKeys.efi 644 /usr/share/edk2/ovmf
+    vinstall Build/OvmfX64/RELEASE_GCC5/X64/Shell.efi 644 /usr/share/edk2/ovmf
+
+    vmkdir "/usr/share/doc/${pkgname}"
+    vinstall OvmfPkg/README 644 "/usr/share/doc/${pkgname}"
+
+    vmkdir /usr/share/qemu/firmware
+
+    for file in 50-edk2-ovmf-x86_64-secure.json 60-edk2-ovmf-x86_64.json; do
+	vinstall ${FILESDIR}/${file} 644 /usr/share/qemu/firmware
+    done
+
+
+    #Install licenses
+    vlicense OvmfPkg/License.txt
+    vlicense ../brotli-${brotli_commit}/LICENSE LICENSE.brotli
+    vlicense ../openssl-${openssl_commit}/LICENSE LICENSE.openssl
+}
