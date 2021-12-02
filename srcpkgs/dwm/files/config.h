@@ -21,8 +21,8 @@ static const char col_light[] = "#18a8f0";
 
 static const char *colors[][3]      = {
 	/*               fg         bg         border   */
-	[SchemeNorm] = { col_light, col_dark, col_light },
-	[SchemeSel]  = { col_dark, col_light,  col_dark },
+	[SchemeNorm] = { col_light, col_dark, col_dark },
+	[SchemeSel]  = { col_dark, col_light,  col_light },
 };
 
 /* tagging */
