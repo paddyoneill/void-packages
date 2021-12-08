@@ -44,11 +44,10 @@ index 4465af1..923591a 100644
  #define TAGMASK                 ((1 << LENGTH(tags)) - 1)
  #define TEXTW(X)                (drw_fontset_getwidth(drw, (X)) + lrpad)
 
-@@ -1276,12 +1276,36 @@ void
+@@ -1276,12 +1276,32 @@ void
  resizeclient(Client *c, int x, int y, int w, int h)
  {
  	XWindowChanges wc;
-+ 	unsigned int n;
 + 	unsigned int gapoffset;
 + 	unsigned int gapincr;
 + 	Client *nbc;
@@ -59,15 +58,12 @@ index 4465af1..923591a 100644
 -	c->oldh = c->h; c->h = wc.height = h;
  	wc.border_width = c->bw;
 +
-+ 	/* Get number of clients for the client's monitor */
-+ 	for (n = 0, nbc = nexttiled(c->mon->clients); nbc; nbc = nexttiled(nbc->next), n++);
-+
 + 	/* Do nothing if layout is floating */
 + 	if (c->isfloating || c->mon->lt[c->mon->sellt]->arrange == NULL) {
 + 		gapincr = gapoffset = 0;
 + 	} else {
 + 		/* Remove border and gap if layout is monocle or only one client */
-+ 		if (c->mon->lt[c->mon->sellt]->arrange == monocle || n == 1) {
++ 		if (c->mon->lt[c->mon->sellt]->arrange == monocle) {
 + 			gapoffset = 0;
 + 			gapincr = -2 * borderpx;
 + 			wc.border_width = 0;
