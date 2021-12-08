@@ -1,0 +1,26 @@
+From 5d14bfe5d0c6f8a6d3ec3a2f95b7349067c436cd Mon Sep 17 00:00:00 2001
+From: Patrick O'Neill <paddy.oneill93@gmail.com>
+Date: Fri, 3 Dec 2021 13:18:25 +0000
+Subject: [PATCH] create config.h if file doesn't exist
+
+---
+ Makefile | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index 470ac86..cfbb1f4 100644
+--- a/Makefile
++++ b/Makefile
+@@ -16,7 +16,9 @@ options:
+ 	@echo "CC      = $(CC)"
+
+ config.h:
+-	cp config.def.h config.h
++	if [ ! -f config.h ]; then \
++		cp config.def.h config.h; \
++	fi
+
+ .c.o:
+ 	$(CC) $(STCFLAGS) -c $<
+--
+2.34.1
